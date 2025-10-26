@@ -1,0 +1,5 @@
+{
+  "name": "DIGITAL DESIGN AI Assistant",
+  "description": "An AI-powered tool to help hardware engineers generate and verify VHDL/Verilog code and comprehensive test environments using SystemVerilog with UVM.",
+  "requestFramePermissions": []
+}
