@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -13,6 +12,10 @@ export interface GeneratedOutput {
   testbench?: HdlFile;
   testCases?: HdlFile;
   designSpec?: HdlFile;
+  functionalCoverage?: HdlFile;
+  svaAssertions?: HdlFile;
+  simulationScripts?: HdlFile;
+  performanceReport?: HdlFile;
 }
 
 export interface Deliverable {
@@ -37,7 +40,9 @@ export class HdlGeneratorService {
   async generateHdl(
     description: string,
     hdlLanguage: 'VHDL' | 'Verilog',
-    deliverables: string[]
+    deliverables: string[],
+    protocol: string,
+    simulationTool: string
   ): Promise<GeneratedOutput> {
 
     const fileSchema = {
@@ -57,11 +62,14 @@ export class HdlGeneratorService {
         testbench: fileSchema,
         testCases: fileSchema,
         designSpec: fileSchema,
+        functionalCoverage: fileSchema,
+        svaAssertions: fileSchema,
+        simulationScripts: fileSchema,
+        performanceReport: fileSchema,
       },
-      // Note: We define all properties but the prompt will instruct the AI to only generate the requested ones.
     };
 
-    const prompt = this.buildPrompt(description, hdlLanguage, deliverables);
+    const prompt = this.buildPrompt(description, hdlLanguage, deliverables, protocol, simulationTool);
 
     try {
       const response = await this.ai.models.generateContent({
@@ -76,7 +84,6 @@ export class HdlGeneratorService {
       const jsonText = response.text.trim();
       const parsedJson = JSON.parse(jsonText);
 
-      // Filter out null/undefined values from the response
       const cleanOutput: GeneratedOutput = {};
       for (const key in parsedJson) {
         if (Object.prototype.hasOwnProperty.call(parsedJson, key) && parsedJson[key]) {
@@ -94,7 +101,9 @@ export class HdlGeneratorService {
   private buildPrompt(
     description: string,
     hdlLanguage: string,
-    deliverables: string[]
+    deliverables: string[],
+    protocol: string,
+    simulationTool: string
   ): string {
     const deliverableList = deliverables.map(d => {
         switch(d) {
@@ -102,9 +111,16 @@ export class HdlGeneratorService {
             case 'testbench': return 'SystemVerilog/UVM Testbench';
             case 'testCases': return 'Test Cases Description (in Markdown)';
             case 'designSpec': return 'Design Specification (in Markdown)';
+            case 'functionalCoverage': return 'Functional Coverage Model (SystemVerilog)';
+            case 'svaAssertions': return 'SystemVerilog Assertions (SVA)';
+            case 'simulationScripts': return `Simulation Scripts for ${simulationTool}`;
+            case 'performanceReport': return 'Performance and Resource Analysis Report (Markdown)';
             default: return d;
         }
     }).join(', ');
+
+    const protocolInfo = protocol !== 'None' ? `- Interface Protocol: ${protocol}` : '';
+    const simToolInfo = deliverables.includes('simulationScripts') ? `- Target Simulator: ${simulationTool}` : '';
 
     return `
       You are an expert Hardware Design and Verification Engineer AI assistant. Your role is to help users develop, verify, and test digital designs.
@@ -116,6 +132,8 @@ export class HdlGeneratorService {
       Generation Task:
       - Target RTL Language: ${hdlLanguage}
       - Verification Environment: SystemVerilog with UVM.
+      ${protocolInfo}
+      ${simToolInfo}
       - Required Deliverables: ${deliverableList}.
 
       Instructions:

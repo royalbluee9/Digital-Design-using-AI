@@ -16,12 +16,18 @@ export class AppComponent {
   // Form State Signals
   description: WritableSignal<string> = signal('Design a 4-bit synchronous up-counter with an active-high reset.');
   hdlLanguage: WritableSignal<'VHDL' | 'Verilog'> = signal('Verilog');
+  protocol: WritableSignal<string> = signal('None');
+  simulationTool: WritableSignal<string> = signal('ModelSim');
   
   availableDeliverables: Deliverable[] = [
     { id: 'rtlCode', name: 'RTL Code', checked: true },
     { id: 'testbench', name: 'UVM Testbench', checked: true },
+    { id: 'functionalCoverage', name: 'Func. Coverage', checked: false },
+    { id: 'svaAssertions', name: 'SVA Assertions', checked: false },
+    { id: 'simulationScripts', name: 'Sim Scripts', checked: false },
     { id: 'testCases', name: 'Test Cases', checked: false },
-    { id: 'designSpec', name: 'Design Specification', checked: false },
+    { id: 'designSpec', name: 'Design Spec', checked: false },
+    { id: 'performanceReport', name: 'Perf. Report', checked: false },
   ];
   deliverables = signal<Deliverable[]>(this.availableDeliverables);
 
@@ -38,14 +44,19 @@ export class AppComponent {
     this.deliverables().filter(d => d.checked).map(d => d.id)
   );
 
+  simulationScriptsSelected: Signal<boolean> = computed(() => 
+    this.selectedDeliverables().includes('simulationScripts')
+  );
+
   outputFiles = computed(() => {
     const output = this.generatedOutput();
     if (!output) return [];
-    // FIX: The original code caused a type error because `value` was not narrowed after filtering,
-    // leading to an invalid spread (`...value`) on a potentially undefined type.
-    // `flatMap` correctly filters for existing values and maps them in a type-safe way.
+    // FIX: Added a check to ensure `value` is an object before spreading it.
+    // The API response is not strictly typed after JSON.parse, so a deliverable
+    // could be a non-object truthy value (e.g., a string or number), which
+    // would cause a runtime error with the spread operator.
     return Object.entries(output).flatMap(([key, value]) =>
-      value ? [{ key, ...value }] : []
+      (value && typeof value === 'object') ? [{ key, ...value }] : []
     );
   });
 
@@ -61,7 +72,9 @@ export class AppComponent {
       const result = await this.hdlGeneratorService.generateHdl(
         this.description(),
         this.hdlLanguage(),
-        this.selectedDeliverables()
+        this.selectedDeliverables(),
+        this.protocol(),
+        this.simulationTool()
       );
       this.generatedOutput.set(result);
       // Set active tab to the first generated file
@@ -93,11 +106,11 @@ export class AppComponent {
   private startLoading(): void {
     this.isLoading.set(true);
     const messages = [
+      'Analyzing requirements...',
       'Synthesizing RTL...',
       'Building UVM environment...',
-      'Generating test cases...',
-      'Running simulations...',
-      'Analyzing coverage...',
+      'Generating assertions & coverage...',
+      'Writing simulation scripts...',
       'Finalizing documentation...'
     ];
     let i = 0;

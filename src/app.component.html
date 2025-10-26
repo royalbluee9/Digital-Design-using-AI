@@ -1,4 +1,3 @@
-
 <main class="min-h-screen container mx-auto p-4 md:p-8 flex flex-col">
   <header class="text-center mb-8">
     <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-500">
@@ -19,7 +18,7 @@
           </label>
           <textarea
             id="description"
-            rows="8"
+            rows="6"
             [ngModel]="description()"
             (ngModelChange)="description.set($event)"
             placeholder="Describe the functionality, interfaces, and performance requirements..."
@@ -27,34 +26,73 @@
           ></textarea>
         </div>
 
-        <div>
-          <label for="hdl-language" class="block text-sm font-medium text-slate-300 mb-2">
-            Target RTL Language
-          </label>
-          <select 
-            id="hdl-language"
-            [ngModel]="hdlLanguage()"
-            (ngModelChange)="hdlLanguage.set($event)"
-            class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-          >
-            <option value="Verilog">Verilog</option>
-            <option value="VHDL">VHDL</option>
-          </select>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="hdl-language" class="block text-sm font-medium text-slate-300 mb-2">
+              Target RTL Language
+            </label>
+            <select 
+              id="hdl-language"
+              [ngModel]="hdlLanguage()"
+              (ngModelChange)="hdlLanguage.set($event)"
+              class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+            >
+              <option value="Verilog">Verilog</option>
+              <option value="VHDL">VHDL</option>
+            </select>
+          </div>
+          <div>
+            <label for="protocol" class="block text-sm font-medium text-slate-300 mb-2">
+              Interface Protocol
+            </label>
+            <select 
+              id="protocol"
+              [ngModel]="protocol()"
+              (ngModelChange)="protocol.set($event)"
+              class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+            >
+              <option value="None">None / Custom</option>
+              <option value="AXI-Lite">AXI-Lite</option>
+              <option value="APB">APB</option>
+              <option value="SPI">SPI</option>
+              <option value="I2C">I2C</option>
+              <option value="UART">UART</option>
+            </select>
+          </div>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">Output Deliverables</label>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
             @for(deliverable of deliverables(); track deliverable.id; let i = $index) {
               <button
                 (click)="toggleDeliverable(i)"
-                [class]="'p-3 rounded-md text-left transition-colors duration-200 ' + (deliverable.checked ? 'bg-indigo-600 text-white' : 'bg-slate-700 hover:bg-slate-600')"
+                [class]="'p-3 rounded-md text-center transition-colors duration-200 text-sm ' + (deliverable.checked ? 'bg-indigo-600 text-white' : 'bg-slate-700 hover:bg-slate-600')"
               >
                 <span class="font-medium">{{ deliverable.name }}</span>
               </button>
             }
           </div>
         </div>
+
+        @if (simulationScriptsSelected()) {
+          <div>
+            <label for="sim-tool" class="block text-sm font-medium text-slate-300 mb-2">
+              Target Simulation Tool
+            </label>
+            <select 
+              id="sim-tool"
+              [ngModel]="simulationTool()"
+              (ngModelChange)="simulationTool.set($event)"
+              class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+            >
+              <option value="ModelSim">ModelSim</option>
+              <option value="VCS">VCS</option>
+              <option value="Xcelium">Xcelium</option>
+              <option value="Vivado">Vivado Simulator</option>
+            </select>
+          </div>
+        }
       </div>
 
       <button
@@ -100,7 +138,7 @@
       } @else if (generatedOutput()) {
         <div class="flex flex-col h-full">
           <div class="flex-shrink-0 border-b border-slate-700 px-2">
-            <nav class="-mb-px flex space-x-2" aria-label="Tabs">
+            <nav class="-mb-px flex space-x-2 overflow-x-auto" aria-label="Tabs">
               @for (file of outputFiles(); track file.key) {
                 <button
                   (click)="setActiveTab(file.key)"
